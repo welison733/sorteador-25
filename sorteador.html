@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteador de Nomes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a78bfa 0%, #6d28d9 100%); /* Fundo gradiente */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Cantos mais arredondados */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Sombra mais forte */
+            padding: 2.5rem; /* Mais espaçamento interno */
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out; /* Animação de fade-in */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #4c1d95; /* Roxo mais profundo para o título */
+            margin-bottom: 1.5rem;
+        }
+        label {
+            color: #525252; /* Cinza mais escuro para rótulos */
+            font-weight: 600; /* Rótulos semi-negrito */
+        }
+        textarea, input[type="number"] {
+            border: 2px solid #e5e7eb; /* Borda mais clara */
+            border-radius: 0.75rem; /* Mais arredondado */
+            padding: 1rem 1.25rem; /* Mais espaçamento interno */
+            width: 100%;
+            font-size: 1.125rem; /* Tamanho de fonte maior */
+            color: #374151;
+            transition: all 0.3s ease-in-out; /* Transições mais suaves */
+        }
+        textarea:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #8b5cf6; /* Borda roxa ao focar */
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3); /* Anel mais suave ao focar */
+        }
+        button {
+            background-image: linear-gradient(to right, #8b5cf6, #a78bfa); /* Gradiente roxo mais brilhante */
+            color: #ffffff;
+            font-weight: 700; /* Texto do botão em negrito */
+            padding: 1rem 2rem; /* Botão maior */
+            border-radius: 1rem; /* Botão mais arredondado */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 8px 15px -3px rgba(139, 92, 246, 0.3), 0 4px 6px -2px rgba(139, 92, 246, 0.2); /* Sombra do botão aprimorada */
+            letter-spacing: 0.05em; /* Pequeno espaçamento entre letras */
+            text-transform: uppercase; /* Texto em maiúsculas */
+        }
+        button:hover {
+            transform: translateY(-3px); /* Elevação mais pronunciada */
+            box-shadow: 0 15px 25px -5px rgba(139, 92, 246, 0.4), 0 8px 10px -5px rgba(139, 92, 246, 0.3);
+        }
+        .button-clear {
+            background-image: linear-gradient(to right, #ef4444, #f87171); /* Gradiente vermelho para botão de limpar */
+        }
+        .button-clear:hover {
+            box-shadow: 0 15px 25px -5px rgba(239, 68, 68, 0.4), 0 8px 10px -5px rgba(239, 68, 68, 0.3);
+        }
+        .button-pdf {
+            background-image: linear-gradient(to right, #22c55e, #4ade80); /* Gradiente verde para botão de PDF */
+        }
+        .button-pdf:hover {
+            box-shadow: 0 15px 25px -5px rgba(34, 197, 94, 0.4), 0 8px 10px -5px rgba(34, 197, 94, 0.3);
+        }
+        .result-box {
+            background-color: #f3e8ff; /* Fundo roxo mais claro para resultados */
+            border: 2px solid #d8b4fe; /* Borda roxa para resultados */
+            border-radius: 1rem; /* Mais arredondado */
+            padding: 2rem; /* Mais espaçamento interno */
+            margin-top: 2rem; /* Mais margem superior */
+            text-align: left;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            animation: slideInUp 0.6s ease-out; /* Animação de slide-in para resultados */
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-box p {
+            font-size: 1.25rem; /* Texto maior para resultados */
+            font-weight: 600; /* Semi-negrito */
+            color: #6b21a8; /* Roxo mais escuro para o texto do resultado */
+            margin-bottom: 0.75rem;
+        }
+        .result-box p:last-child {
+            margin-bottom: 0;
+        }
+        .winner-item {
+            font-size: 1.125rem; /* Ligeiramente menor para vencedores individuais */
+            color: #7e22ce; /* Roxo para vencedores individuais */
+            margin-bottom: 0.5rem;
+            padding-left: 1rem; /* Recuo para vencedores */
+            position: relative;
+        }
+        .winner-item::before {
+            content: '•'; /* Marcador de lista */
+            position: absolute;
+            left: 0;
+            color: #a78bfa; /* Cor do marcador */
+            font-weight: bold;
+        }
+        .error-message {
+            color: #ef4444; /* Vermelho mais brilhante para erros */
+            font-weight: 600; /* Semi-negrito */
+            margin-top: 1.5rem; /* Mais margem superior */
+            background-color: #fee2e2; /* Fundo vermelho claro */
+            border: 1px solid #fca5a5; /* Borda vermelha */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        /* Estilos para a nova área de upload de imagem */
+        .image-upload-area {
+            margin-bottom: 2.5rem; /* Espaço abaixo da área de upload de imagem */
+        }
+        #imagePreviewContainer {
+            transition: all 0.3s ease-in-out;
+            cursor: pointer; /* Indica que é clicável */
+        }
+        #imagePreviewContainer:hover {
+            border-color: #8b5cf6; /* Borda roxa ao passar o mouse */
+            background-color: #f3e8ff; /* Fundo roxo claro ao passar o mouse */
+        }
+        #uploadedImage {
+            /* Não precisa de display: none; aqui, a classe 'hidden' lida com isso */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-upload-area">
+            <label for="imageUpload" class="block text-lg mb-2 text-gray-700 font-medium cursor-pointer">
+                </label>
+            <div id="imagePreviewContainer" class="w-64 h-64 mx-auto bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
+                <img id="uploadedImage" src="#" alt="Prévia da Imagem" class="w-full h-full object-contain hidden">
+                <span id="uploadText" class="text-gray-500 text-sm">Clique para anexar</span>
+            </div>
+            <input type="file" id="imageUpload" accept="image/*" class="hidden">
+        </div>
+
+        <h1 class="text-4xl font-extrabold mb-6">Sorteador de Nomes</h1>
+
+        <div class="mb-6">
+            <label for="namesInput" class="block text-lg mb-2">
+                Insira os nomes (um por linha):
+            </label>
+            <textarea id="namesInput" rows="10" placeholder="Nome 1&#10;Nome 2&#10;Nome 3" class="resize-y"></textarea>
+        </div>
+
+        <div class="mb-8">
+            <label for="numWinnersInput" class="block text-lg mb-2">
+                Quantidade de nomes a sortear:
+            </label>
+            <input type="number" id="numWinnersInput" min="1" value="1" class="text-center">
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <button id="drawButton" class="w-full sm:w-1/3">
+                Sortear Nomes
+            </button>
+            <button id="clearButton" class="w-full sm:w-1/3 button-clear">
+                Limpar Tudo
+            </button>
+            <button id="generatePdfButton" class="w-full sm:w-1/3 button-pdf">
+                Gerar PDF
+            </button>
+        </div>
+
+        <div id="result" class="result-box hidden">
+            <p class="font-extrabold text-2xl mb-4">Nomes Sorteados:</p>
+            <div id="winnerList"></div>
+        </div>
+
+        <div id="errorMessage" class="error-message hidden"></div>
+    </div>
+
+    <script>
+        // Importa jsPDF do pacote UMD
+        const { jsPDF } = window.jspdf;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const namesInput = document.getElementById('namesInput');
+            const numWinnersInput = document.getElementById('numWinnersInput');
+            const drawButton = document.getElementById('drawButton');
+            const clearButton = document.getElementById('clearButton');
+            const generatePdfButton = document.getElementById('generatePdfButton');
+            const resultDiv = document.getElementById('result');
+            const winnerListDiv = document.getElementById('winnerList');
+            const errorMessageDiv = document.getElementById('errorMessage');
+
+            // Elementos para upload de imagem
+            const imageUploadInput = document.getElementById('imageUpload');
+            const uploadedImage = document.getElementById('uploadedImage');
+            const uploadText = document.getElementById('uploadText');
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+            // Função para resetar todos os campos
+            const resetAll = () => {
+                namesInput.value = '';
+                numWinnersInput.value = '1';
+                winnerListDiv.innerHTML = '';
+                resultDiv.classList.add('hidden');
+                errorMessageDiv.classList.add('hidden');
+                errorMessageDiv.textContent = '';
+
+                // Reseta a área de upload de imagem
+                imageUploadInput.value = ''; // Limpa o arquivo selecionado
+                uploadedImage.classList.add('hidden');
+                uploadedImage.src = '#';
+                uploadText.classList.remove('hidden');
+                console.log('Todos os campos foram limpos.');
+            };
+
+            // Ativa o clique no input de arquivo quando o contêiner de pré-visualização é clicado
+            imagePreviewContainer.addEventListener('click', () => {
+                imageUploadInput.click();
+            });
+
+            // Lida com a seleção do arquivo de imagem
+            imageUploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    // Verifica se o arquivo é uma imagem
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            uploadedImage.src = e.target.result;
+                            uploadedImage.classList.remove('hidden'); // Torna a imagem visível
+                            uploadText.classList.add('hidden');       // Oculta o texto
+                            errorMessageDiv.classList.add('hidden'); // Limpa o erro se mostrado anteriormente
+                            console.log('Imagem carregada com sucesso. SRC:', uploadedImage.src.substring(0, 50) + '...');
+                        };
+                        reader.onerror = (e) => {
+                            console.error('Erro ao ler a imagem:', e);
+                            errorMessageDiv.textContent = 'Erro ao carregar a imagem. Tente novamente.';
+                            errorMessageDiv.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // Se não for uma imagem, limpa o input e mostra erro
+                        imageUploadInput.value = ''; // Limpa o arquivo selecionado
+                        uploadedImage.classList.add('hidden');
+                        uploadedImage.src = '#';
+                        uploadText.classList.remove('hidden');
+                        errorMessageDiv.textContent = 'Por favor, selecione um arquivo de imagem válido.';
+                        errorMessageDiv.classList.remove('hidden');
+                        console.warn('Arquivo selecionado não é uma imagem.');
+                    }
+                } else {
+                    // Nenhum arquivo selecionado (ex: usuário cancelou a caixa de diálogo)
+                    uploadedImage.classList.add('hidden');
+                    uploadedImage.src = '#';
+                    uploadText.classList.remove('hidden');
+                    errorMessageDiv.classList.add('hidden'); // Limpa o erro se o usuário deselecionar
+                    console.log('Nenhum arquivo selecionado ou seleção cancelada.');
+                }
+            });
+
+            // Listener de evento para o botão Sortear
+            drawButton.addEventListener('click', () => {
+                const names = namesInput.value.split('\n')
+                                            .map(name => name.trim())
+                                            .filter(name => name !== '');
+                const numWinners = parseInt(numWinnersInput.value, 10);
+
+                // Limpa resultados e erros anteriores
+                winnerListDiv.innerHTML = '';
+                resultDiv.classList.add('hidden');
+                errorMessageDiv.classList.add('hidden');
+                errorMessageDiv.textContent = '';
+
+                if (names.length === 0) {
+                    errorMessageDiv.textContent = 'Por favor, insira pelo menos um nome.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (isNaN(numWinners) || numWinners < 1) {
+                    errorMessageDiv.textContent = 'Por favor, insira um número válido para a quantidade de sorteados (mínimo 1).';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (numWinners > names.length) {
+                    errorMessageDiv.textContent = `Você não pode sortear ${numWinners} nomes de apenas ${names.length} disponíveis.`;
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                const shuffledNames = [...names].sort(() => 0.5 - Math.random());
+                const winners = shuffledNames.slice(0, numWinners);
+
+                // Melhoria de performance: Usa um Document Fragment para atualizações em lote do DOM
+                const fragment = document.createDocumentFragment();
+                winners.forEach(winner => {
+                    const p = document.createElement('p');
+                    p.textContent = winner;
+                    p.classList.add('winner-item'); // Adiciona classe para estilizar vencedores individuais
+                    fragment.appendChild(p);
+                });
+                winnerListDiv.appendChild(fragment); // Anexa todos os vencedores de uma vez
+
+                resultDiv.classList.remove('hidden');
+            });
+
+            // Listener de evento para o botão Limpar
+            clearButton.addEventListener('click', resetAll);
+
+            // Listener de evento para o botão Gerar PDF
+            generatePdfButton.addEventListener('click', () => {
+                const winners = Array.from(winnerListDiv.children).map(p => p.textContent);
+
+                if (winners.length === 0) {
+                    errorMessageDiv.textContent = 'Nenhum nome sorteado para gerar o PDF.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                errorMessageDiv.classList.add('hidden'); // Limpa qualquer mensagem de erro anterior
+
+                // Inicializa jsPDF
+                const doc = new jsPDF();
+
+                // Adiciona título
+                doc.setFontSize(22);
+                doc.text("Nomes Sorteados", 105, 20, null, null, "center");
+
+                // Adiciona uma linha abaixo do título
+                doc.setLineWidth(0.5);
+                doc.line(20, 25, 190, 25);
+
+                // Adiciona vencedores
+                doc.setFontSize(14);
+                let y = 40;
+                winners.forEach((winner, index) => {
+                    if (y > 280) { // Verifica estouro de página (aproximadamente altura A4)
+                        doc.addPage();
+                        y = 20; // Reseta y para nova página
+                    }
+                    doc.text(`• ${winner}`, 30, y);
+                    y += 10; // Altura da linha
+                });
+
+                // Salva o PDF
+                doc.save("nomes_sorteados.pdf");
+                console.log('PDF gerado com sucesso!');
+            });
+        });
+    </script>
+</body>
+</html>
